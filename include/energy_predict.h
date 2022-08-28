@@ -44,6 +44,9 @@ class energy_pre :public energy
 	bool flip_angle;
 	double angle_k;
 
+	Eigen::Matrix3d F_EGN;
+	Eigen::Matrix<double,1,5> C_EGN;
+
 public:
     cv::Point Aim_armor;
     cv::RotatedRect center_R;
