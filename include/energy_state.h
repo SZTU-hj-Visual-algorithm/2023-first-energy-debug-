@@ -25,6 +25,9 @@ class energy:public robot_state
     cv::Mat l_uh;
     cv::Mat r_uh;
     double energy_threshold = 0.65;
+    int thresh = 37;
+    int thres_red = 34;
+    int thres_blue = 60;
         public:
             energy();
             cv::Point2f dst_p[4] = {cv::Point2f(0,0),cv::Point2f(0,30),cv::Point2f(60,30),cv::Point2f(60,0)};

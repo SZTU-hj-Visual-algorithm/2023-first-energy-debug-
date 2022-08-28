@@ -15,10 +15,7 @@
 
 using namespace cv;
 
-int thresh = 37;
-int thres_red = 34;
-int thres_blue = 60;
-Mat src_call,max_color_call,red_bin_call;
+
 
 energy::energy()
 {
