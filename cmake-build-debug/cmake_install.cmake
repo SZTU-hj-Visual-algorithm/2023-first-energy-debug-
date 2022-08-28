@@ -1,4 +1,4 @@
-# Install script for directory: F:/SZTU-hj-algorithm/2022-Team-Visual-Algorithm
+# Install script for directory: F:/SZTU-hj-algorithm/2023-first-energy(debug)/2023-first-energy-debug-
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "F:/SZTU-hj-algorithm/2022-Team-Visual-Algorithm/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "F:/SZTU-hj-algorithm/2023-first-energy(debug)/2023-first-energy-debug-/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

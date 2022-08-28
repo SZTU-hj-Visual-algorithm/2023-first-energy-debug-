@@ -56,10 +56,10 @@ RM = "E:\clion(c++)\CLion 2021.2\bin\cmake\win\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = F:\SZTU-hj-algorithm\2022-Team-Visual-Algorithm
+CMAKE_SOURCE_DIR = F:\SZTU-hj-algorithm\2023-first-energy(debug)\2023-first-energy-debug-
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = F:\SZTU-hj-algorithm\2022-Team-Visual-Algorithm\cmake-build-debug
+CMAKE_BINARY_DIR = F:\SZTU-hj-algorithm\2023-first-energy(debug)\2023-first-energy-debug-\cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,9 +86,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start F:\SZTU-hj-algorithm\2022-Team-Visual-Algorithm\cmake-build-debug\CMakeFiles F:\SZTU-hj-algorithm\2022-Team-Visual-Algorithm\cmake-build-debug\\CMakeFiles\progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start F:\SZTU-hj-algorithm\2023-first-energy(debug)\2023-first-energy-debug-\cmake-build-debug\CMakeFiles F:\SZTU-hj-algorithm\2023-first-energy(debug)\2023-first-energy-debug-\cmake-build-debug\\CMakeFiles\progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start F:\SZTU-hj-algorithm\2022-Team-Visual-Algorithm\cmake-build-debug\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start F:\SZTU-hj-algorithm\2023-first-energy(debug)\2023-first-energy-debug-\cmake-build-debug\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -128,29 +128,29 @@ run/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/build
 .PHONY : run/fast
 
-main4.obj: main4.cpp.obj
-.PHONY : main4.obj
+main.obj: main.cpp.obj
+.PHONY : main.obj
 
 # target to build an object file
-main4.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main4.cpp.obj
-.PHONY : main4.cpp.obj
+main.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main.cpp.obj
+.PHONY : main.cpp.obj
 
-main4.i: main4.cpp.i
-.PHONY : main4.i
+main.i: main.cpp.i
+.PHONY : main.i
 
 # target to preprocess a source file
-main4.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main4.cpp.i
-.PHONY : main4.cpp.i
+main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-main4.s: main4.cpp.s
-.PHONY : main4.s
+main.s: main.cpp.s
+.PHONY : main.s
 
 # target to generate assembly for a file
-main4.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main4.cpp.s
-.PHONY : main4.cpp.s
+main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\run.dir\build.make CMakeFiles/run.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 src/ArmorDetector.obj: src/ArmorDetector.cpp.obj
 .PHONY : src/ArmorDetector.obj
@@ -377,9 +377,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... run
-	@echo ... main4.obj
-	@echo ... main4.i
-	@echo ... main4.s
+	@echo ... main.obj
+	@echo ... main.i
+	@echo ... main.s
 	@echo ... src/ArmorDetector.obj
 	@echo ... src/ArmorDetector.i
 	@echo ... src/ArmorDetector.s

@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/run.dir/main4.cpp.obj"
+  "CMakeFiles/run.dir/main.cpp.obj"
   "CMakeFiles/run.dir/src/ArmorDetector.cpp.obj"
   "CMakeFiles/run.dir/src/CRC_Check.cpp.obj"
   "CMakeFiles/run.dir/src/KAL.cpp.obj"
