@@ -1,0 +1,494 @@
+//
+// Created by 蓬蒿浪人 on 2022/7/18.
+//
+#include "energy_state.h"
+#include <opencv2/core/eigen.hpp>
+
+
+#define SHOW_BINARY
+//#define SHOW_FU
+#define AIM_SHOW
+//#define R_ROI_SHOW
+#define R_SHOW
+//#define R_RECT_SHOW
+//#define SEE_AREA_DIFF
+
+using namespace cv;
+
+int thresh = 51;
+int thres_red = 50;
+int thres_blue = 66;
+Mat src_call,max_color_call,red_bin_call;
+
+void thresh_make(int &thr_r,int &thr)
+{
+    int src_call_data = src_call.rows*src_call.cols;
+    uchar* Imgdata = (uchar*)src_call.data;
+    uchar* reddata = (uchar*)red_bin_call.data;
+    uchar* Imgdata_binary = (uchar*)max_color_call.data;
+    for (int i=0;i<src_call_data;i++)
+    {
+        if (*(Imgdata+2) > thr_r)*reddata = 255;
+        if (*(Imgdata+2) - *Imgdata > thr)*Imgdata_binary = 255;
+        reddata++;
+        Imgdata_binary++;
+        Imgdata+=3;
+    }
+    max_color_call = red_bin_call & max_color_call;
+    imshow("binary",max_color_call);
+}
+
+void THRESH_CALL(int,void*)
+{
+//    int x=*((int *)usrdata);
+    thresh_make(thresh,thres_red);
+
+}
+
+energy_inf energy::detect_aim()
+{
+    hit_count = 0;
+    energy_inf energyInf;
+//    src = _src.clone();
+
+    Mat max_color = Mat(src.size(), CV_8UC1, cv::Scalar(0));
+    Mat thres_b;
+    int width = src.cols;
+    int height = src.rows;
+    int srcdata = width*height;
+
+    uchar* Imgdata = (uchar*)src.data;
+    uchar* Imgdata_binary = (uchar*)max_color.data;
+    cvtColor(src,thres_b,COLOR_BGR2GRAY);
+    threshold(thres_b,thres_b,thresh,255,THRESH_BINARY);//这里阈值参数要调
+    if (this->enermy_color == RED)
+    {
+        for (int i=0;i<srcdata;i++)
+        {
+            if (*(Imgdata+2) - *Imgdata > thres_red)*Imgdata_binary = 255;//这里阈值参数也要调
+            Imgdata_binary++;
+            Imgdata+=3;
+        }
+    }
+    else
+    {
+        for (int i=0;i<srcdata;i++)
+        {
+            if (*(Imgdata) - *(Imgdata+2) > thres_blue)*Imgdata_binary = 255;//这里阈值参数也要调
+            Imgdata_binary++;
+            Imgdata+=3;
+        }
+    }
+    max_color = thres_b & max_color;
+    center_mat = max_color.clone();
+    Mat dilate_color;
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE,Size(5,5));//这个膨胀核也要调
+    dilate(max_color,max_color,kernel);
+#ifdef SHOW_BINARY
+    imshow("binary",max_color);
+#endif
+    std::vector<std::vector<Point>> cnt;
+    findContours(max_color,cnt,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+
+    int recent_hited = 0;
+    int min_index = 0;
+    Mat result;
+    Point2f re_p[4];
+    for (int i=0;i<cnt.size();i++)
+    {
+        RotatedRect r = minAreaRect(cnt[i]);
+        double r_w = r.size.width;
+        double r_h = r.size.height;
+        double wh_area = r_w*r_h;
+        if ((wh_area> 3200)&&(wh_area<28000))
+        {
+            double co_area = contourArea(cnt[i]);
+#ifdef SEE_AREA_DIFF
+            std::cout<<co_area<<std::endl;
+            std::cout<<wh_area<<std::endl;
+#endif
+            //drawContours(src,cnt,i,Scalar(255,0,0),2);
+            if(co_area/wh_area < 0.58)
+            {
+                hit_count = 1;
+                Point2f p[4];
+                r.points(p);
+                Point2f src_p[4];
+
+                if (r_h>r_w)
+                {
+                    src_p[0] = p[0];
+                    src_p[1] = p[3];
+                    src_p[2] = p[2];
+                    src_p[3] = p[1];
+                }
+                else
+                {
+                    src_p[0] = p[1];
+                    src_p[1] = p[0];
+                    src_p[2] = p[3];
+                    src_p[3] = p[2];
+                }
+                Mat dst;
+                //            for (int i=0;i<1000;i++)
+                //            {
+                //                double t = (double)getTickCount();
+                Mat matrix_per = getPerspectiveTransform(src_p,dst_p);
+                warpPerspective(max_color,dst,matrix_per,Size(60,30));
+                //                double need_time = ((double)getTickCount() - t)/getTickFrequency();
+                //                total_time+=need_time;
+                //            }
+                //            std::cout<<total_time<<std::endl;
+                //            aim.push_back(dst);
+                //                            imshow("dst",dst);
+                //                            waitKey(0);
+                //            imwrite(file_name[count++],dst);
+                //            Mat mm,stdDev;
+                    min_index = i;
+                    result = dst.clone();
+                    re_p[0] = src_p[0];
+                    re_p[1] = src_p[1];
+                    re_p[2] = src_p[2];
+                    re_p[3] = src_p[3];
+            }
+            else
+            {
+                recent_hited++;
+            }
+
+        }
+    }
+//    cout<<hited_count<<endl;
+    if (recent_hited == hited_count)
+    {
+        change_aim = 0;//0是不需要更换目标
+    }
+    else if (recent_hited-hited_count == 1)
+    {
+	if (hited_count == 4)
+	{
+		change_aim = 3;//1是需要更换目标且是打中而更换目标
+	}
+	else
+	{
+		change_aim = 1;
+	}
+        
+    }
+    else
+    {
+	change_aim = 2;//2是需要更换目标且是超时间没打中需要更换目标
+    }
+    hited_count = recent_hited;
+//    cout<<recent_hited<<endl;
+
+
+    if (hit_count == 0)
+    {
+        energyInf.c_rect = RotatedRect();
+        energyInf.re_aim = Point();
+        return energyInf;
+    }
+#ifdef SHOW_FU
+    RotatedRect rect = minAreaRect(cnt[min_index]);
+    Point2f pp[4];
+    rect.points(pp);
+    for (int i=0;i<4;i++)
+    {
+        line(src,pp[i],pp[(i+1)%4],Scalar(255,0,0),2);
+    }
+#endif
+
+    std::vector<std::vector<Point>> re_cnt;
+    std::vector<Vec4i> hei;
+
+    findContours(result,re_cnt,hei,RETR_CCOMP,CHAIN_APPROX_SIMPLE);
+
+    Point aim;
+    RotatedRect aim_rect;
+    imshow("result",result);
+    for (int i=0;i<re_cnt.size();i++)
+    {
+        //std::cout<<contourArea(re_cnt[i])<<std::endl;
+        bool limit1 = hei[i][2] == -1;
+        bool limit2 = contourArea(re_cnt[i]) > 120;
+        bool limit3 = hei[i][3] !=-1;
+        if (limit1 && limit2 && limit3)
+        {
+            aim_rect = minAreaRect(re_cnt[i]);
+            aim.x = aim_rect.center.x;
+            aim.y = aim_rect.center.y;
+            //            circle(result,aim_rect.center,3,Scalar(255),-1);
+            break;
+        }
+    }
+    if (aim_rect.size.empty())
+    {
+	printf("lose aim!!!!");
+        energyInf.c_rect = RotatedRect();
+        energyInf.re_aim = Point();
+        return energyInf;
+    }
+
+    std::vector<Point2f> warp_aim_vec;
+    std::vector<Point2f> unwarp_aim_vec;
+    Point re_aim;
+    warp_aim_vec.push_back(aim);
+    Mat unmatrix_warp = getPerspectiveTransform(dst_p,re_p);
+    perspectiveTransform(warp_aim_vec,unwarp_aim_vec,unmatrix_warp);
+    re_aim = unwarp_aim_vec[0];
+#ifdef AIM_SHOW
+    circle(src,re_aim,5,Scalar(255,0,0),-1);
+	//imshow("src",src);
+#endif
+    RotatedRect unwarp_rect = minAreaRect(cnt[min_index]);
+    Point2f unwarp_p[4];
+    unwarp_rect.points(unwarp_p);
+    Point need_p;
+    if (unwarp_rect.size.height > unwarp_rect.size.width)
+    {
+        if (aim.x<30)
+        {
+            need_p.x = (unwarp_p[1].x + unwarp_p[2].x)/2;
+            need_p.y = (unwarp_p[1].y + unwarp_p[2].y)/2;
+        }
+        else
+        {
+            need_p.x = (unwarp_p[0].x + unwarp_p[3].x)/2;
+            need_p.y = (unwarp_p[0].y + unwarp_p[3].y)/2;
+        }
+    }
+    else
+    {
+        if (aim.x<30)
+        {
+            need_p.x = (unwarp_p[2].x + unwarp_p[3].x)/2;
+            need_p.y = (unwarp_p[2].y + unwarp_p[3].y)/2;
+        }
+        else
+        {
+            need_p.x = (unwarp_p[0].x + unwarp_p[1].x)/2;
+            need_p.y = (unwarp_p[0].y + unwarp_p[1].y)/2;
+        }
+    }
+    Point R_center;
+    R_center.x = re_aim.x + (need_p.x - re_aim.x)*2/1.48;
+    R_center.y = re_aim.y + (need_p.y - re_aim.y)*2/1.48;
+
+    Rect c_roi;
+    c_roi.x = R_center.x - 25;//原来是22
+    c_roi.y = R_center.y - 25;
+    c_roi.width = 50;
+    c_roi.height = 50;
+    if ((c_roi.x<0)||(c_roi.x+c_roi.width>src.cols)||(c_roi.y<0)||(c_roi.y+c_roi.height>src.rows))
+    {
+        energyInf.c_rect = RotatedRect();
+        energyInf.re_aim = Point();
+        return energyInf;
+    }
+#ifdef R_ROI_SHOW
+    circle(src,R_center,5,Scalar(255,255,0),-1);
+    rectangle(src,c_roi,Scalar(255,0,255),2);
+#endif
+    std::vector<std::vector<Point>> c_cnt;
+    findContours(center_mat(c_roi),c_cnt,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+    if(c_cnt.size()==0)
+    {
+        energyInf.c_rect = RotatedRect();
+        energyInf.re_aim = Point();
+        return energyInf;
+    }
+    int max_c = 0;
+    for (int i=0;i<c_cnt.size();i++)
+    {
+        if (contourArea(c_cnt[i]) > contourArea(c_cnt[max_c]))
+        {
+            max_c = i;
+        }
+    }
+    RotatedRect c_rect = minAreaRect(c_cnt[max_c]);
+    //std::cout<<c_rect.size.width*c_rect.size.height<<std::endl;
+    if (c_rect.size.width*c_rect.size.height < 200)
+    {
+        energyInf.c_rect = RotatedRect();
+        energyInf.re_aim = Point();
+        return energyInf;
+    }
+    Rect pnp_rect = boundingRect(c_cnt[max_c]);
+    Eigen::Vector3d real_c = pnp_get(pnp_rect);
+    //    std::cout<<real_c(1,0)<<'\t'<<real_c(0,0)<<std::endl;
+    get_ap(real_c,re_aim,c_rect);
+    double recent_depth = real_c(2,0);
+    distances.push_back(recent_depth);
+    //printf("distances_size:%d\t",distances.size());
+    double filter_num;
+    if (distances.size() == 11)
+    {
+	double f = depth_filter(distances);
+	//filter_num = fabs(f-depth)/depth;
+        //depth = depth*filter_num + (1-filter_num)*f;
+	depth = f;
+    }
+    else
+    {
+        depth = depth*0.4 + 0.6*recent_depth;
+    }
+   //printf("depth:%lf\n",depth);
+    //std::cout<<depth<<std::endl;
+#ifdef R_SHOW
+    c_rect.center.x = c_rect.center.x + c_roi.x;
+    c_rect.center.y = c_rect.center.y + c_roi.y;
+    circle(src,c_rect.center,5,Scalar(255,0,0),-1);
+#endif
+    energyInf.re_aim = re_aim;
+    energyInf.c_rect = c_rect;
+#ifdef R_RECT_SHOW
+    Point2f cp[4];
+    c_rect.points(cp);
+    for (int i=0;i<4;i++)
+    {
+        line(src,cp[i],cp[(i+1)%4],Scalar(255,0,0),2);
+    }
+#endif
+    //imshow("src",src);
+    //std::cout<<"one frame"<<std::endl;
+    return energyInf;
+}
+
+void energy::show_all_dst()
+{
+    for (int i=0;i<warp_vec.size();i++)
+    {
+        imshow("warp",warp_vec[i]);
+    }
+}
+
+void energy::adjust_bin(Mat &_src)
+{
+    src_call = _src.clone();
+    max_color_call = Mat(src.size(), CV_8UC1, cv::Scalar(0));
+    red_bin_call = Mat(src.size(),CV_8UC1,cv::Scalar(0));
+
+    namedWindow("binary", WINDOW_AUTOSIZE);
+    createTrackbar("THRESH:", "binary", &thresh, 255,THRESH_CALL);
+    THRESH_CALL(0,0);
+    createTrackbar("THRESH_RED:","binary",&thres_red,255,THRESH_CALL);
+    THRESH_CALL(0,0);
+//    setTrackbarPos("THRESH:", "binary", thresh);
+//    setTrackbarPos("THRESH_RED", "binary", thresh_red);
+
+}
+
+Eigen::Vector3d energy::pnp_get(Rect &c_rect)
+{
+    double x = c_rect.x;
+    double y = c_rect.y;
+    double w = c_rect.width;
+    double h = c_rect.height;
+    Point2f lu,ld,ru,rd;
+    std::vector<cv::Point3d> ps = {
+            {-0.106 / 2 , -0.106 / 2, 0.},
+            {0.106 / 2 , -0.106 / 2, 0.},
+            {0.106 / 2 , 0.106 / 2, 0.},
+            {-0.106 / 2 , 0.106 / 2, 0.}
+    };
+    lu = Point2f(x-w/2,y-h/2);
+    ld = Point2f(x-w/2,y+h/2);
+    ru = Point2f(x+w/2,y-h/2);
+    rd = Point2f(x+w/2,y+h/2);
+
+    std::vector<cv::Point2f> pu;
+    pu.push_back(lu);
+    pu.push_back(ru);
+    pu.push_back(rd);
+    pu.push_back(ld);
+
+    Mat rvec;
+    Mat tvec;
+    Eigen::Vector3d tv;
+
+
+    F_MAT=(cv::Mat_<double>(3, 3) << 1564.40096, 0.000000000000, 641.93179, 0.000000000000, 1564.32777, 523.40759, 0.000000000000, 0.000000000000, 1.000000000000);
+	C_MAT=(cv::Mat_<double>(1, 5) << -0.07930, 0.21700, 0.00045, 0.00033, 0.00000);
+	cv::cv2eigen(F_MAT,F_EGN);
+	cv::cv2eigen(C_MAT,C_EGN);
+
+    cv::solvePnP(ps, pu, F_MAT, C_MAT, rvec, tvec);
+
+
+    cv2eigen(tvec, tv);//这个转为了啥
+
+    //            std::cout<<tv(2,0)<<std::endl;
+    return tv;
+}
+
+void energy::get_ap(Eigen::Vector3d &real_c,Point &Aim,RotatedRect &c_rect)
+{
+    Point R_center = c_rect.center;
+    int r_x = R_center.x;
+    int r_y = R_center.y;
+    int a_x = Aim.x;
+    int a_y = Aim.y;
+    double ar_dis = sqrt((a_x-r_x)*(a_x-r_x)+(a_y-r_y)*(a_y-r_y));
+    double ar_xdis = a_x-r_x;
+    double ar_ydis = a_y-r_y;
+    double cos_ar = ar_xdis/ar_dis;
+    double sin_ar = ar_ydis/ar_dis;
+    Eigen::Vector3d pu = {(double)Aim.x,(double)Aim.y,1};
+	Eigen::Vector3d real_vec = F_EGN.inverse()*(pu * depth);
+    real_xy[0] = real_vec(0,0);
+    real_xy[1] = real_vec(1,0);
+//    cout<<real_xy[0]<<"\t"<<real_xy[1]<<endl;
+
+}
+
+double energy::depth_filter(deque<double> &dis)
+{
+    vector<double> filter;
+    for (int i=0;i<dis.size();i++)
+    {
+	filter.push_back(dis[i]);
+    }
+    sort(filter.begin(),filter.end());
+    dis.pop_front();
+    return filter[5];
+}
+
+void energy::make_c_safe(cv::Rect &line)
+{
+    if (line.x<0)
+    {
+        line.x=0;
+    }
+    else if (line.x>src.cols)
+    {
+        line.x=src.cols;
+    }
+    if (line.y<0)
+    {
+        line.y=0;
+    }
+    else if (line.y>src.rows)
+    {
+        line.y=src.rows;
+    }
+
+    if (line.x-line.width<0)
+    {
+        line.width = 2*line.x;
+    }
+    if (line.y-line.height<0)
+    {
+        line.height = 2*line.y;
+    }
+
+    if (line.x+line.width>src.cols)
+    {
+        line.width=2*(src.cols-line.x);
+    }
+    if (line.y+line.height>src.rows)
+    {
+        line.height=2*(src.rows-line.y);
+    }
+}
+

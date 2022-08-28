@@ -1,0 +1,3 @@
+/home/nvidia/Desktop/2023-first-energy/build/CMakeFiles/rebuild_cache.dir
+/home/nvidia/Desktop/2023-first-energy/build/CMakeFiles/run.dir
+/home/nvidia/Desktop/2023-first-energy/build/CMakeFiles/edit_cache.dir

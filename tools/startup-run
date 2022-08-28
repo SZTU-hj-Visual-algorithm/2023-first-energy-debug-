@@ -1,0 +1,16 @@
+#!/bin/bash
+echo dji | sudo -S cpufreq-set -g performance
+echo -e "gnome-terminal -- bash -c \"/home/nvidia/Desktop/2023-first-energy/tools/monitor.sh\"">>~/.profile
+echo "#!/bin/sh" > ./monitor.sh
+echo "/home/nvidia/Desktop/2023-first-energy/build/run" >> ./monitor.sh
+echo "export LD_LIBRARY_PATH=/home/nvidia/Desktop/2023-first-energy/build/run" >> ./monitor.sh
+echo "while true; do" >> ./monitor.sh
+echo "        server=ps aux | grep CenterServer_d | grep -v grep">>./monitor.sh
+echo "        if [ ! \"\$server\" ]; then" >> ./monitor.sh
+echo "            /home/nvidia/Desktop/2023-first-energy/build/run " >> ./monitor.sh
+echo "	    echo \"restart\"" >> ./monitor.sh
+echo "            sleep 10" >> ./monitor.sh
+echo "        fi" >> ./monitor.sh
+echo "        sleep 5" >> ./monitor.sh
+echo "done" >> ./monitor.sh
+chmod +x ./monitor.sh
