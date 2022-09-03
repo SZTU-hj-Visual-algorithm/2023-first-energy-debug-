@@ -317,7 +317,7 @@ vector<matched_rect> ArmorDetector::findTarget() {
                 if (condition1 && condition2 && condition3 && condition4)
 				{
                     RotatedRect obj_rect = boundingRRect(rect_i, rect_j);
-                    if (Contain(obj_rect,RectFirstResult,i))
+                    if (Contain(obj_rect,RectFirstResult,i,j))
 				    {
                         continue;
                     }
@@ -555,13 +555,13 @@ cv::RotatedRect ArmorDetector::boundingRRect(const cv::RotatedRect & left, const
 	return RotatedRect(center, Size2f(width, height), angle * 180 / CV_PI);
 	////这里需要测试角度
 }
-bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights, size_t &i)
+bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights, size_t &i, size_t &j)
 {
     Rect boud_rect = match_rect.boundingRect();
-    for (size_t j=i+1;j<Lights.size();j++)
+    for (size_t k=i+1;k<j;k++)
     {
         Point2f light_ps[4];
-        Lights[j].points(light_ps);
+        Lights[k].points(light_ps);
         if (inside(light_ps[0],boud_rect) || inside(light_ps[1],boud_rect) || inside(light_ps[2],boud_rect) || inside(light_ps[3],boud_rect))
         {
             return true;
