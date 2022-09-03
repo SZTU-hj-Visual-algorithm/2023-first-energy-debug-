@@ -218,7 +218,7 @@ private:
         return makeRectSafe(rect, size);
     }
 
-    bool Contain(cv::RotatedRect &match_rect, std::vector<cv::RotatedRect> &Lights, size_t &i);
+    bool Contain(cv::RotatedRect &match_rect, std::vector<cv::RotatedRect> &Lights, size_t &i, size_t &j);
 
     inline bool inside(cv::Point2f &p, cv::Rect &rect)
     {
