@@ -20,10 +20,10 @@ struct energy_inf
 
 class energy:public robot_state
         {
-    cv::Mat l_h;
-    cv::Mat r_h;
-    cv::Mat l_uh;
-    cv::Mat r_uh;
+    cv::Mat l_hit;
+    cv::Mat r_hit;
+    cv::Mat l_uhit;
+    cv::Mat r_uhit;
     double energy_threshold = 0.65;
     int thresh = 37;
     int thres_red = 34;

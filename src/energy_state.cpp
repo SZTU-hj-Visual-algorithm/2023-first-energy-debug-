@@ -19,14 +19,14 @@ using namespace cv;
 
 energy::energy()
 {
-    l_h = imread("../l_h.jpg");
-    r_h = imread("../r_h.jpg");
-    l_uh = imread("../l_uh.jpg");
-    r_uh = imread("../r_uh.jpg");
-    cvtColor(l_h,l_h,COLOR_BGR2GRAY);
-    cvtColor(r_h,r_h,COLOR_BGR2GRAY);
-    cvtColor(l_uh,l_uh,COLOR_BGR2GRAY);
-    cvtColor(r_uh,r_uh,COLOR_BGR2GRAY);
+    l_hit = imread("../l_h.jpg");
+    r_hit = imread("../r_h.jpg");
+    l_uhit = imread("../l_uh.jpg");
+    r_uhit = imread("../r_uh.jpg");
+    cvtColor(l_hit,l_hit,COLOR_BGR2GRAY);
+    cvtColor(r_hit,r_hit,COLOR_BGR2GRAY);
+    cvtColor(l_uhit,l_uhit,COLOR_BGR2GRAY);
+    cvtColor(r_uhit,r_uhit,COLOR_BGR2GRAY);
 }
 
 
@@ -125,8 +125,8 @@ energy_inf energy::detect_aim()
                 Mat l_match_result,r_match_result;
                 double min_l,max_l,min_r,max_r,last_max;
                 Point lmin_loc,lmax_loc,rmin_loc,rmax_loc;
-                matchTemplate(dst,l_uh,l_match_result,TM_CCORR_NORMED);
-                matchTemplate(dst,r_uh,r_match_result,TM_CCORR_NORMED);
+                matchTemplate(dst,l_uhit,l_match_result,TM_CCORR_NORMED);
+                matchTemplate(dst,r_uhit,r_match_result,TM_CCORR_NORMED);
                 minMaxLoc(l_match_result,&min_l,&max_l,&lmin_loc,&lmax_loc);
                 minMaxLoc(r_match_result,&min_r,&max_r,&rmin_loc,&rmax_loc);
                 cout<<"uh_value_l:"<<max_l<<endl;
@@ -169,8 +169,8 @@ energy_inf energy::detect_aim()
                 Mat l_match_result,r_match_result;
                 double min_l,max_l,min_r,max_r,last_max;
                 Point lmin_loc,lmax_loc,rmin_loc,rmax_loc;
-                matchTemplate(dst,l_uh,l_match_result,TM_CCORR_NORMED);
-                matchTemplate(dst,r_uh,r_match_result,TM_CCORR_NORMED);
+                matchTemplate(dst,l_hit,l_match_result,TM_CCORR_NORMED);
+                matchTemplate(dst,r_hit,r_match_result,TM_CCORR_NORMED);
                 minMaxLoc(l_match_result,&min_l,&max_l,&lmin_loc,&lmax_loc);
                 minMaxLoc(r_match_result,&min_r,&max_r,&rmin_loc,&rmax_loc);
                 cout<<"h_value_l:"<<max_l<<endl;
@@ -332,6 +332,8 @@ energy_inf energy::detect_aim()
         return energyInf;
     }
     Rect pnp_rect = boundingRect(c_cnt[max_c]);
+    pnp_rect.x = pnp_rect.x + c_roi.x;
+    pnp_rect.y = pnp_rect.y + c_roi.y;
     Eigen::Vector3d real_c = pnp_get(pnp_rect);
     //    std::cout<<real_c(1,0)<<'\t'<<real_c(0,0)<<std::endl;
     get_ap(real_c,re_aim,c_rect);
@@ -347,7 +349,7 @@ energy_inf energy::detect_aim()
     }
     //    std::cout<<depth<<std::endl;
 #ifdef R_SHOW
-c_rect.center.x = c_rect.center.x + c_roi.x;
+    c_rect.center.x = c_rect.center.x + c_roi.x;
     c_rect.center.y = c_rect.center.y + c_roi.y;
     circle(src,c_rect.center,5,Scalar(255,0,0),-1);
 #endif
@@ -377,8 +379,8 @@ void energy::show_all_dst()
 
 Eigen::Vector3d energy::pnp_get(Rect &c_rect)
 {
-    double x = c_rect.x+210;
-    double y = c_rect.y+200;
+    double x = c_rect.x;
+    double y = c_rect.y;
     double w = c_rect.width;
     double h = c_rect.height;
     Point2f lu,ld,ru,rd;
@@ -388,10 +390,10 @@ Eigen::Vector3d energy::pnp_get(Rect &c_rect)
             {0.106 / 2 , 0.106 / 2, 0.},
             {-0.106 / 2 , 0.106 / 2, 0.}
     };
-    lu = Point2f(x-w/2,y-h/2);
-    ld = Point2f(x-w/2,y+h/2);
-    ru = Point2f(x+w/2,y-h/2);
-    rd = Point2f(x+w/2,y+h/2);
+    lu = Point2f(x,y);
+    ld = Point2f(x,y+h);
+    ru = Point2f(x+w,y);
+    rd = Point2f(x+w,y+h);
 
     std::vector<cv::Point2f> pu;
     pu.push_back(lu);
@@ -428,8 +430,8 @@ void energy::get_ap(Eigen::Vector3d &real_c,Point &Aim,RotatedRect &c_rect)
     double ar_ydis = a_y-r_y;
     double cos_ar = ar_xdis/ar_dis;
     double sin_ar = ar_ydis/ar_dis;
-    real_xy[0] = real_c(0,0)+1.4*cos_ar;
-    real_xy[1] = real_c(1,0)+1.4*sin_ar;
+    real_xy[0] = real_c(0,0)+0.7*cos_ar;
+    real_xy[1] = real_c(1,0)+0.7*sin_ar;
     //    cout<<real_xy[0]<<"\t"<<real_xy[1]<<endl;
 
 }
