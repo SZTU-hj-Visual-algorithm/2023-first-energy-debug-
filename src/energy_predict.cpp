@@ -36,7 +36,6 @@ void energy_pre::hit_reset()//打中大符后所需的重置函数
 	measure_angle = 0.10;
 	angle_k_1 = 0.10;
 	angle_k = 0.10;
-//	start_angle = angle_k;
 	last_time = 0;
 	flip_angle = false;
 }

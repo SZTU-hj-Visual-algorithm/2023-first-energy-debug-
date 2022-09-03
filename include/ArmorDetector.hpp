@@ -43,26 +43,10 @@ struct ArmorParam {
     int bin_cls_thres;          // 二分类防止三根灯条的分割阈值
     float target_max_angle;
 
-    // 默认的构造值
-    //ArmorParam(){
-    //    min_light_height = 8;
-    //    light_slope_offset = 30;
-    //    max_light_delta_h = 450;
-    //    min_light_delta_h = 12;
-    //    max_light_delta_v = 50;
-    //    max_light_delta_angle = 30;
-    //    near_face_v = 600;
-    //    max_lr_rate = 1.5;
-    //    max_wh_ratio = 5.2;
-    //    min_wh_ratio = 1.25;
-    //    small_armor_wh_threshold = 3.6;
-    //    bin_cls_thres = 166;
-    //    target_max_angle = 20;
-    //}
 	ArmorParam() {   ////这里是按照文件里修改的
 		min_light_height = 10;
 		light_slope_offset = 30;
-		max_light_delta_h = 720;
+		max_light_delta_h = 350;
 		min_light_delta_h = 20;
 		max_light_delta_v = 100;
 		max_light_delta_angle = 30;
@@ -234,6 +218,23 @@ private:
         return makeRectSafe(rect, size);
     }
 
+    bool Contain(cv::RotatedRect &match_rect, std::vector<cv::RotatedRect> &Lights, size_t &i);
+
+    inline bool inside(cv::Point2f &p, cv::Rect &rect)
+    {
+        int x_start = rect.x;
+        int y_start = rect.y;
+        int x_limit = rect.x+rect.width;
+        int y_limit = rect.y+rect.height;
+        if ((p.x>x_start)&&(p.x<x_limit)&&(p.y>y_start)&&(p.y<y_limit))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 private:
 //public:
     /*AngleSolver* s_solver;
