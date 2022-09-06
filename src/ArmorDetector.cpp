@@ -247,13 +247,13 @@ vector<matched_rect> ArmorDetector::findTarget() {
 			// 往右斜的长灯条
 			// rRect.points有顺序的，y最小的点是0,顺时针1 2 3
 			if (anglei > 45.0) {
-				pt[0] = _pt[3];
-				pt[1] = _pt[0];
+				pt[0] = _pt[2];
+				pt[1] = _pt[3];
 			}
 				// 往左斜的
 			else {
-				pt[0] = _pt[2];
-				pt[1] = _pt[3];
+				pt[0] = _pt[1];
+				pt[1] = _pt[2];
 			}
 
 			for (size_t j = i + 1; j < RectFirstResult.size(); j++) {
@@ -271,12 +271,12 @@ vector<matched_rect> ArmorDetector::findTarget() {
 				rect_j.points(_pt);
 				if (anglej > 45.0)
 				{
-					pt[2] = _pt[2];
-					pt[3] = _pt[1];
-				}
-				else {
 					pt[2] = _pt[1];
 					pt[3] = _pt[0];
+				}
+				else {
+					pt[2] = _pt[0];
+					pt[3] = _pt[3];
 				}
 				double maxangle = MAX(ptangle(pt[0], pt[2]), ptangle(pt[1], pt[3]));  ////宽，横着的那个的角度
 				//std::cout<<"angle:"<<maxangle<<std::endl;
@@ -571,4 +571,5 @@ bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights
             return false;
         }
     }
+    return false;
 }
