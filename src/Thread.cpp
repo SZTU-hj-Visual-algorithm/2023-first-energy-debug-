@@ -29,12 +29,12 @@ void* Build_Src(void* PARAM)
 	Mat get_src;
 	auto camera_warper = new Camera;
 	printf("camera_open\n");
-	int count = 0;
+	//int count = 0;
 	if (camera_warper->init())
 	{
 		while (is_continue && !(waitKey(10) == 27))
 		{
-			string str = "./en/"+ to_string(count) + ".jpg";	
+			//string str = "./en/"+ to_string(count) + ".jpg";
 			if (camera_warper->read_frame_rgb())
 			{
 				//printf("1\n");
@@ -42,7 +42,7 @@ void* Build_Src(void* PARAM)
 				pthread_mutex_lock(&mutex_new);
 				{
 					get_src.copyTo(src);
-					imwrite(str,src);
+					//imwrite(str,src);
 					is_start = true;
 					pthread_cond_signal(&cond_new);
 					pthread_mutex_unlock(&mutex_new);

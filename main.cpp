@@ -39,11 +39,11 @@ int main(void)
 	pthread_mutex_init(&mutex_new, NULL);
 	pthread_cond_init(&cond_new, NULL);
 	pthread_create(&thread1, NULL, Build_Src, NULL);
-	//pthread_create(&thread2, NULL, Armor_Kal, NULL);
-	//pthread_create(&thread3, NULL, Kal_predict, NULL);
+	pthread_create(&thread2, NULL, Armor_Kal, NULL);
+	pthread_create(&thread3, NULL, Kal_predict, NULL);
 	pthread_join(thread1, NULL);
-	//pthread_join(thread2, NULL);
-	//pthread_join(thread3, NULL);
+	pthread_join(thread2, NULL);
+	pthread_join(thread3, NULL);
 	pthread_mutex_destroy(&mutex_new);
 	return 0;
 }
