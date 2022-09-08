@@ -187,17 +187,32 @@ energy_inf energy::detect_aim()
     //    cout<<hited_count<<endl;
     imshow("result",result);
     //    cout<<recent_hited<<endl;
-    if (recent_hited == hited_count)
+
+    if ((change_aim == 3)&&(recent_hited!=0))
     {
-        change_aim = 0;//0是不需要更换目标
-    }
-    else if (recent_hited-hited_count == 1)
-    {
-        change_aim = 1;//1是需要更换目标且是打中而更换目标
+        change_aim = 3;
     }
     else
     {
-        change_aim = 2;//2是需要更换目标且是超时间没打中需要更换目标
+        if (recent_hited == hited_count)
+        {
+            change_aim = 0;//0是不需要更换目标
+        }
+        else if (recent_hited-hited_count == 1)
+        {
+            if (recent_hited == 5)
+            {
+                change_aim = 3;
+            }
+            else
+            {
+                change_aim = 1;//1是需要更换目标且是打中而更换目标
+            }
+        }
+        else
+        {
+            change_aim = 2;//2是需要更换目标且是超时间没打中需要更换目标
+        }
     }
     hited_count = recent_hited;
     //    cout<<recent_hited<<endl;
