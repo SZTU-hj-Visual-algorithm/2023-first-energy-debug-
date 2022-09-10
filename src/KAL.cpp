@@ -43,7 +43,7 @@ void KAL::sp_reset(kal_filter& kf)
 
 bool KAL::predict(RotatedRect &detection, kal_filter& kf, double time)
 {
-	//t=-1;
+	//t=-1;装甲板目标为空
 	if (detection.size.empty())
 	{
 		reset();
@@ -55,6 +55,7 @@ bool KAL::predict(RotatedRect &detection, kal_filter& kf, double time)
 	Point bp = detection.center;
 	//���Ŀ����������------------------------------------------------------
 	double w, h;
+	// 装甲板大小
 	if (type == 1)
 	{
 		w = 0.130;
@@ -67,11 +68,11 @@ bool KAL::predict(RotatedRect &detection, kal_filter& kf, double time)
 	}
 	
 	cv::Point2f pts[4];
-	detection.points(pts);
-	std::sort(pts, pts + 4, [](const cv::Point2f& p1, const cv::Point2f& p2) { return p1.x < p2.x; });
-	Eigen::Vector3d m_pc = pnp_get_pc(pts, w, h);
+	detection.points(pts);  // 装甲板坐标
+	std::sort(pts, pts + 4, [](const cv::Point2f& p1, const cv::Point2f& p2) { return p1.x < p2.x; });  // 按左右顺序排序
+	Eigen::Vector3d m_pc = pnp_get_pc(pts, w, h);  // pnp解算坐标（待定）
 	
-	if (depth > 5.5)
+	if (depth > 5.5)  // 限制深度大小（待定）
 	{
 		depth = 109.41*pow(MIN(detection.size.width,detection.size.height), -1.066);
 	}
