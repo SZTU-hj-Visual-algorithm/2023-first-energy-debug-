@@ -10,7 +10,7 @@ using namespace cv;
 class KAL:public robot_state
 {
 private:
-	double depth; //
+	double depth;
 	
 	Mat F_MAT;
 	Eigen::Matrix3d F;
