@@ -61,12 +61,12 @@ bool energy_pre::energy_predict_aim(long int now_time, bool small_energy) {
 		    }
 		    else if (change_aim == 3)
 		    {
-			reset();
-			direct = -1;
-			dir_count = 0;
-			distances.clear();
-			return false;
-	    	    }
+                reset();
+                direct = -1;
+                dir_count = 0;
+                distances.clear();
+                return false;
+		    }
 		}
 //		std::cout<<"总时间："<<t<<endl;
 		dt = ((double) (now_time - last_time)) / getTickFrequency();
