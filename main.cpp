@@ -4,7 +4,7 @@
 #include <opencv2/core/cvstd.hpp>
 #include "CRC_Check.h"
 #include"serialport.h"
-//#include<X11/Xlib.h>
+#include<X11/Xlib.h>
 #include"Thread.hpp"
 
 //#define DETECT
