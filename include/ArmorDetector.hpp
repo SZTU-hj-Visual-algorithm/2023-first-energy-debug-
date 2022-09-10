@@ -23,7 +23,7 @@ IN THE SOFTWARE.
 #include "robot_state.h"
 
 #define TRUNC_ABS(a) ((a) > 0 ? (a) : 0);
-#define POINT_DIST(p1,p2) std::sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y))
+#define POINT_DIST(p1,p2) std::sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y))  // 两点之间距离
 
 //enum EnemyColor { RED = 0, BLUE = 1};
 
@@ -60,11 +60,11 @@ struct ArmorParam {
 	}
 };
 
-// 匹配灯条的结构体
+// 灯条对旋转矩形的结构体
 struct matched_rect{
-    cv::RotatedRect rect;
-    float lr_rate;
-    float angle_abs;
+    cv::RotatedRect rect;  // 旋转矩形
+    float lr_rate;  // 长宽比
+    float angle_abs;  // 角度差绝对值
 };
 
 //候选灯条的结构体
@@ -73,8 +73,8 @@ struct candidate_target{
     float armor_angle;
     int index;
     bool is_small_armor;
-    float bar_lr_rate;
-    float bar_angle_abs;
+    float armor_lr_rate;
+    float armor_angle_abs;
 };
 //检测到的目标的结构体
 struct Detect_data {
@@ -171,7 +171,7 @@ private:
      * @param right right RotatedRect
      * @return minumum area that contacts two inputs
      */
-    cv::RotatedRect boundingRRect(const cv::RotatedRect & left, const cv::RotatedRect & right);
+    static cv::RotatedRect boundingRRect(const cv::RotatedRect & left, const cv::RotatedRect & right);
 
     /**
      * @brief 调整旋转矩形的角度
@@ -187,7 +187,7 @@ private:
      * @param size 限制的大小，防止越界
      * @return
      */
-    bool makeRectSafe(cv::Rect & rect, cv::Size size){
+    static bool makeRectSafe(cv::Rect & rect, cv::Size size){
         if (rect.x < 0)
             rect.x = 0;
         if (rect.x + rect.width > size.width)
@@ -218,9 +218,10 @@ private:
         return makeRectSafe(rect, size);
     }
 
-    bool Contain(cv::RotatedRect &match_rect, std::vector<cv::RotatedRect> &Lights, size_t &i, size_t &j);
+    static bool Contain(cv::RotatedRect &match_rect, std::vector<cv::RotatedRect> &Lights, size_t &i, size_t &j);
 
-    inline bool inside(cv::Point2f &p, cv::Rect &rect)
+    // 判断坐标点是否在矩形内部
+    static inline bool inside(cv::Point2f &p, cv::Rect &rect)
     {
         int x_start = rect.x;
         int y_start = rect.y;
@@ -239,8 +240,8 @@ private:
 //public:
     /*AngleSolver* s_solver;
     AngleSolver * l_solver;*/
-    
-    bool _is_lost;
+    double wh_ratio;
+    bool _is_lost;  // (未使用)
     ArmorParam _para = ArmorParam();               // parameter of alg
     int _lost_cnt;                  // 失去目标的次数，n帧没有识别到则全局搜索
     bool _is_small_armor;           // true if armor is the small one, otherwise false
