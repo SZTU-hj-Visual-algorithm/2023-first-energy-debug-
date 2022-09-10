@@ -15,10 +15,10 @@
 
 extern pthread_mutex_t mutex_new; 
 extern pthread_cond_t cond_new; 
-extern pthread_mutex_t mutex_kal;
-extern pthread_cond_t cond_kal;
+extern pthread_mutex_t mutex_ka; 
+extern pthread_cond_t cond_ka; 
 
-extern bool is_kal;
+extern bool is_ka;
 extern bool is_start;         
 extern cv::Mat src;      
 
