@@ -48,7 +48,7 @@ int main(void)
 	pthread_join(thread1, NULL);
 	pthread_join(thread2, NULL);
 	pthread_join(thread3, NULL);
-    // 注销一个互斥锁
+    // 注销一个互斥锁 
 	pthread_mutex_destroy(&mutex_new);
 	return 0;
 }
