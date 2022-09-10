@@ -254,19 +254,19 @@ vector<matched_rect> ArmorDetector::findTarget() {
             rect_i.points(_pt);
 
 
-            // FIXME：_pt取点待确认
+            // TODO：验证pt
             /*pt
                 * 0 2
                 * 1 3
                 * */
             // 往右斜的灯条
             if (angle_i > 45.0) {
-				pt[0] = _pt[3];
+				pt[0] = _pt[1];
 				pt[1] = _pt[0];
 			}
             // 往左斜的灯条
 			else {
-				pt[0] = _pt[2];
+				pt[0] = _pt[0];
 				pt[1] = _pt[3];
 			}
             // TODO:优化灯条匹配
@@ -523,7 +523,7 @@ bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights
 {
     Rect bound_rect = match_rect.boundingRect();
 //    for (size_t k=i+1; k<j; k++) // （原）
-    for (size_t k=i+1;;)
+    for (size_t k=i+1;k<j;)
     {
         Point2f light_ps[4];
         Lights[k].points(light_ps);
@@ -536,6 +536,7 @@ bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights
             return false;
         }
     }
+    return false;
 }
 
 //将之前的各个函数都包含在一个函数中，直接用这一个
