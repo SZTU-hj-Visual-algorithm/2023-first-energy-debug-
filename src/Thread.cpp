@@ -10,7 +10,7 @@ bool is_continue = true; // 未读取到摄像头将设为false
 
 typedef struct form
 {
-	RotatedRect ROT;  //
+	RotatedRect ROT;
 	int Armor_type;  // 装甲板类型
 	float a[4];  // 机器人状态数据
 	int is_get;  // 是否从串口读取到数据
