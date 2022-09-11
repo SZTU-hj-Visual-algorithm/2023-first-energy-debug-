@@ -19,9 +19,10 @@ IN THE SOFTWARE.
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <queue>
-#include "opencv2/dnn/dnn.hpp"
+#include "string""
+#include <cmath>
 
-
+#define SHOW_ALL_CANDIDATE
 //#define SHOW_CANDIDATE_IMG
 #define SHOW_Binary_IMG
 //#define SHOW_MATCHED_RECT_ARMOR
@@ -36,7 +37,8 @@ void ArmorDetector::setImage(const cv::Mat & src){
 	_size = src.size();  // 一直是1280*720的
 	// 注意这个_res_last是一个旋转矩形
 	const cv::Point & last_result = _res_last.center;
-	
+    float last_lr_rate = _res_last_matched.lr_rate;
+//    cout << last_lr_rate << endl;
 	// 如果上一次的目标没了，源图就是输入的图
 	// 并且搜索的ROI矩形（_dect_rect）就是整个图像
 	if (last_result.x == 0 || last_result.y == 0) {
@@ -46,29 +48,37 @@ void ArmorDetector::setImage(const cv::Mat & src){
 	else{
 		// 如果上一次的目标没有丢失的话，用直立矩形包围上一次的旋转矩形
 		Rect rect = _res_last.boundingRect();
-		
+
 		// _para.max_light_delta_h 是左右灯柱在水平位置上的最大差值，像素单位
 		int max_half_w = _para.max_light_delta_h * 1.3;
 		int max_half_h = 300;
 
-        //TODO: 截取ROI图像需要优化，以适应反陀螺识别
+        //TODO: 截取ROI图像需要优化，以适应反陀螺识别（已优化）
 
 		// 截图的区域大小。太大的话会把45度识别进去
 		double scale_w = 2;
 		double scale_h = 2;
-
-		int w = int(rect.width * scale_w);
+        int lu_x_offset = 0;
+        int rd_x_offset = 0;
+        // 根据灯条高度比设置偏移量
+        if(last_lr_rate>1)
+            lu_x_offset = 6 *( pow(last_lr_rate - 1, 0.6) + 0.09) * rect.width;
+        else
+            rd_x_offset = 6 * (pow(1 - last_lr_rate, 0.6) + 0.15) * rect.width;
+//        cout << "lu: " << lu_x_offset << " rd: " << rd_x_offset << endl;
+        int w = int(rect.width * scale_w);
 		int h = int(rect.height * scale_h);
-		Point center = last_result;
 
-        //得到左上和右下两个角点，判断max和min是为了防止越界
-        int x = std::max(center.x - w, 0);
-		int y = std::max(center.y - h, 0);
+        Point center = last_result;
+
+		int x = std::max(center.x - w - lu_x_offset, 0);
+		int y = std::max(static_cast<int>(center.y + h), 0);
 		Point lu = Point(x, y);  /* point left up */
-		x = std::min(center.x + w, src.cols);
-		y = std::min(center.y + h, src.rows);
+
+		x = std::min(center.x + w + rd_x_offset, src.cols);
+		y = std::min(static_cast<int>(center.y + h), src.rows);
 		Point rd = Point(x, y);  /* point right down */
-		
+
 
 		// 构造出矩形找到了搜索的ROI区域
 		_dect_rect = Rect(lu, rd);
@@ -84,9 +94,9 @@ void ArmorDetector::setImage(const cv::Mat & src){
 			// 如果ROI矩形合法的话就用此ROI
 			src(_dect_rect).copyTo(_src);
 	}
-	
+
 	//==========================上面已经设置好了真正处理的原图============================
-	
+
 	// 下面是在敌方通道上二值化进行阈值分割
 	// _max_color是红蓝通道相减之后的二值图像
 	///////////////////////////// begin /////////////////////////////////////////////
@@ -95,16 +105,17 @@ void ArmorDetector::setImage(const cv::Mat & src){
 	 * 只不过在特定场合可以选择特定的预处理方式
 	 * 例如HSV的话可以完全过滤掉日光灯的干扰，但是耗时较大
 	 */
-	
-	
+
+
 	int thres_max_color_red = 46;
 	int thres_max_color_blue = 146;
-	
+
 	_max_color = cv::Mat(_src.size(), CV_8UC1, cv::Scalar(0));
-	
-	
+
+
 	Mat element = getStructuringElement(MORPH_CROSS, Size(3, 3));
 	// 敌方颜色为红色时
+    EnemyColor enermy_color = RED;
 	if (enermy_color == RED){
 
         // TODO：验证该代码段
@@ -173,7 +184,7 @@ void ArmorDetector::setImage(const cv::Mat & src){
 			Imgdata += 3;
 			Imgdata_binary++;
 		}
-		
+
 		/*
         subtract(splited[0], splited[2], _max_color);
 		threshold(_max_color, _max_color, thres_max_color_blue, 255, THRESH_BINARY);// blue
@@ -184,7 +195,7 @@ void ArmorDetector::setImage(const cv::Mat & src){
 
 		dilate(_max_color, _max_color, element);
 	}
-	
+
 	////////////////////////////// end /////////////////////////////////////////
 #ifdef SHOW_Binary_IMG
 	cv::imshow("_max_color", _max_color);
@@ -261,12 +272,12 @@ vector<matched_rect> ArmorDetector::findTarget() {
                 * */
             // 往右斜的灯条
             if (angle_i > 45.0) {
-				pt[0] = _pt[1];
+				pt[0] = _pt[3];
 				pt[1] = _pt[0];
 			}
             // 往左斜的灯条
 			else {
-				pt[0] = _pt[0];
+				pt[0] = _pt[2];
 				pt[1] = _pt[3];
 			}
             // TODO:优化灯条匹配
@@ -278,7 +289,7 @@ vector<matched_rect> ArmorDetector::findTarget() {
 				float len_j = MAX(rect_j.size.width, rect_j.size.height);
 				float angle_j = fabs(rect_j.angle);
 				float delta_h = xj - xi;  // 两灯条距离
-				float lr_rate = len_i > len_j ? len_i / len_j : len_j / len_i;  // 高度比
+				float lr_rate = len_i / len_j; // 高度比
 				float angle_abs;
 
 				rect_j.points(_pt);
@@ -310,7 +321,9 @@ vector<matched_rect> ArmorDetector::findTarget() {
 								  abs(yi - yj) < _para.max_light_delta_v\
                     && abs(yi - yj) < 1.2 * MAX(len_i, len_j); // && abs(yi - yj) < MIN(leni, lenj)
 				bool condition3 = lr_rate < _para.max_lr_rate;
-				bool condition4;
+                bool condition5 = lr_rate > _para.min_lr_rate;
+
+                bool condition4;
 				if (!base_mode)
                     // 区分哨兵模式和步兵模式
 					condition4 = sentry_mode ? angle_abs < 25 : angle_abs < 15 - 5;
@@ -320,7 +333,7 @@ vector<matched_rect> ArmorDetector::findTarget() {
 //				Point test_center = Point((xi + xj) / 2, (yi + yj) / 2);  // 装甲板中心
 
                 //// 四种情况均成立，将两个灯条组成候选旋转矩形
-                if (condition1 && condition2 && condition3 && condition4)
+                if (condition1 && condition2 && condition3 && condition4 && condition5)
 				{
                     RotatedRect obj_rect = boundingRRect(rect_i, rect_j);
                     ////对符合条件的旋转矩形进行初步筛选
@@ -365,9 +378,9 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
 		_is_lost = true;  // (未使用)
 		return {};
 	}
-	
+
 	//// 初始化参数
-	bool ret_idx = -1; // 是否有候选装甲板的标识
+	int ret_idx = -1; // 是否有候选装甲板的标识
 	bool is_small = false;  // 大小装甲板标识
 //	double weight = 0;
 	vector<candidate_target> candidate;  // 候选装甲板
@@ -375,7 +388,7 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
 	////////////////////////////// 筛选候选装甲板 ////////////////////////////////////
 	for (size_t i = 0; i < match_rects.size(); i++){
 		const RotatedRect & rect = match_rects[i].rect;
-		
+
 		// 如果矩形的宽高比小于阈值的话就是小装甲，否则是大装甲(初步判断)
 		if (wh_ratio < _para.small_armor_wh_threshold)
 			is_small = true;
@@ -392,7 +405,7 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
 
 
     // TODO: 这个代码块可以用ID识别替代
-    // TODO: 添加装甲板ID，时间戳，面积属性
+    // TODO: 添加装甲板ID，时间戳属性
 
         {//// 用均值和方差去除中间太亮的图片（例如窗外的灯光等）
             RotatedRect screen_rect = RotatedRect(rect.center, Size2f(rect.size.width * 0.88, rect.size.height),
@@ -403,7 +416,7 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
             int x = screen_rect.center.x - screen_rect.size.width / 2 + _dect_rect.x;
             int y = screen_rect.center.y - screen_rect.size.height / 2 + _dect_rect.y;
             //// 初步理解是为了再dect_rect里面处理，但是很奇怪///答：坐标轴的转换，前面是使用截取坐标（_src）后面用的是原图坐标
-            p1 = Point(x, y);
+            p1 = Point(x, y - 40);
             x = screen_rect.center.x + screen_rect.size.width / 2 + _dect_rect.x;
             y = screen_rect.center.y + screen_rect.size.height / 2 + _dect_rect.y;
             p2 = Point(x, y);
@@ -430,23 +443,37 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
             }
         }
 
-		
+
 
 		// 现在这个旋转矩形的高度（用来判断远近）
 		int cur_height = MIN(rect.size.width, rect.size.height);
 
+
+        int cur_area = rect.size.width * rect.size.height;
+        Point2i cur_center = {static_cast<int>(rect.center.x + _dect_rect.x), static_cast<int>(rect.center.y + _dect_rect.y)};
 		// 把矩形的特征信息push到一个候选vector中
-		candidate.push_back(candidate_target{cur_height, cur_angle, static_cast<int>(i), is_small, match_rects[i].lr_rate, match_rects[i].angle_abs});
+		candidate.push_back(candidate_target{cur_center, cur_height, cur_area, cur_angle, static_cast<int>(i), is_small, match_rects[i].lr_rate, match_rects[i].angle_abs});
 		ret_idx = 1;
 	}
+#ifdef SHOW_ALL_CANDIDATE
+    Point2f ps[4];
+    for (auto & i : candidate){
+        match_rects[i.index].rect.points(ps);
+        for (int j = 0; j < 4; j++) {
+            line(src, {static_cast<int>(ps[j].x+_dect_rect.x), static_cast<int>(ps[j].y + _dect_rect.y)},
+                 {static_cast<int>(ps[(j + 1) % 4].x+_dect_rect.x), static_cast<int>(ps[(j + 1) % 4].y+_dect_rect.y)}, CV_RGB(255, 0, 0));
+        }
+    }
+#endif
 	//================================ 到这里才结束循环 =======================================
 	int final_index = 0;
 	if (candidate.size() > 1){
-        // TODO: 可以按面积排序
+        // TODO: 1.可以按面积排序（已优化）
+        //       2.验证排序是否有意义
 		// 将候选矩形按照高度大小排序，选出最大的（距离最近）
 		sort(candidate.begin(), candidate.end(),
 			 [](candidate_target & target1, candidate_target & target2){
-				 return target1.armor_height > target2.armor_height;
+				 return target1.armor_area > target2.armor_area;
 			 });
 
         // TODO：在得到装甲板ID后需要更严谨的击打逻辑
@@ -454,19 +481,31 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
 		 * 下面的几个temp值可以筛选出最终要击打的装甲板，我只用了一两个效果已经挺好的了
 		 * 只是偶尔还会有误识别的情况，可以将这几个temp值都组合起来进行最终的判断
 		 * */
-		
+
 		float temp_angle = candidate[0].armor_angle;
 		float temp_lr_rate = candidate[0].armor_lr_rate;
 		float temp_angle_abs = candidate[0].armor_angle_abs;
 		float temp_weight = temp_angle + temp_lr_rate;
-		
-		for (int i = 1; i < candidate.size(); i++){
-			double angle = match_rects[candidate[i].index].rect.angle;
+        int temp_area = candidate[0].armor_area;
+        Rect last_rect = _res_last.boundingRect();
+        //// 利用上一帧目标区域实现装甲板目标追踪
+        if (last_rect.contains(candidate[0].armor_center)){
+            final_index = 0;
+            goto label;
+        }
+
+        for (int i = 1; i < candidate.size(); i++){
+            double angle = match_rects[candidate[i].index].rect.angle;
+            if (last_rect.contains(candidate[i].armor_center)){
+                final_index = i;
+                break;
+            }
+
 			if ( candidate[0].armor_height / candidate[i].armor_height < 1.1){
 				if (candidate[i].armor_angle < temp_angle
 					/*&& (candidate[i].bar_lr_rate */){
 					temp_angle = candidate[i].armor_angle;
-					if (candidate[i].armor_lr_rate < 1.66) final_index = i;
+                    if (candidate[i].armor_lr_rate < 1.66 || candidate[i].armor_lr_rate > 0.6) {final_index = i; }
 				}
 			}
 		}
@@ -483,16 +522,17 @@ cv::RotatedRect ArmorDetector::chooseTarget(const std::vector<matched_rect> & ma
         line(rect_show, vertices[i], vertices[(i + 1) % 4], CV_RGB(255, 0, 0));
     imshow("final_rect", rect_show);
 #endif
-	
+    label:
 	// ret_idx为 -1 就说明没有目标
 	if (ret_idx == -1){
 		_is_lost = true;
-		return RotatedRect();
+		return {};
 	}
 	// 否则就证明找到了目标
 	_is_lost = false;
 	_is_small_armor = candidate[final_index].is_small_armor;
 	RotatedRect ret_rect = match_rects[candidate[final_index].index].rect;
+    _res_last_matched = match_rects[candidate[final_index].index];  // 前一帧的目标装甲板参数
 	return ret_rect;
 }
 
@@ -522,12 +562,20 @@ cv::RotatedRect ArmorDetector::boundingRRect(const cv::RotatedRect & left, const
 bool ArmorDetector::Contain(RotatedRect &match_rect, vector<RotatedRect> &Lights, size_t &i, size_t &j)
 {
     Rect bound_rect = match_rect.boundingRect();
-//    for (size_t k=i+1; k<j; k++) // （原）
+    //// 用灯条中心点, 顶点和底点筛选
     for (size_t k=i+1;k<j;)
     {
-        Point2f light_ps[4];
+        Point2f light_ps_center;
+        Point2f light_ps_top;
+        Point2f light_ps_bottom;
+        Point2f *light_ps;
+
         Lights[k].points(light_ps);
-        if (inside(light_ps[0],bound_rect) || inside(light_ps[1],bound_rect) || inside(light_ps[2],bound_rect) || inside(light_ps[3],bound_rect))
+        light_ps_center = Lights[k].center;
+        light_ps_top = (light_ps[0] + light_ps[1]) / 2;
+        light_ps_bottom = (light_ps[2] + light_ps[3]) / 2;
+
+        if (bound_rect.contains(light_ps_center) ||bound_rect.contains(light_ps_top) || bound_rect.contains(light_ps_bottom))
         {
             return true;
         }
@@ -564,7 +612,7 @@ cv::RotatedRect ArmorDetector::getTargetAera(const cv::Mat & src, const int & sb
         if (_lost_cnt < 8)
             _res_last.size = Size2f(_res_last.size.width, _res_last.size.height);
         else if(_lost_cnt == 9)
-            _res_last.size =Size2f(_res_last.size.width * 1.2, _res_last.size.height * 1.2);
+            _res_last.size =Size2f(_res_last.size.width * 1.1, _res_last.size.height * 1.6);
         else if(_lost_cnt == 12)
             _res_last.size = Size2f(_res_last.size.width * 1.5, _res_last.size.height * 1.5);
         else if(_lost_cnt == 15)
