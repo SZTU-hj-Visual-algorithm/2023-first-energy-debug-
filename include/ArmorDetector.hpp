@@ -16,7 +16,7 @@ IN THE SOFTWARE.
 *******************************************************************************************************************/
 
 #pragma once
-
+#include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 //#include "KAl.h"
 #include "opencv2/dnn/dnn.hpp"
@@ -36,7 +36,8 @@ struct ArmorParam {
     int max_light_delta_v;		// 左右灯柱在垂直位置上的最大差值，像素单位
     int max_light_delta_angle;	// 左右灯柱在斜率最大差值，单位度
     int near_face_v;            // 贴脸的距离
-    float max_lr_rate;              // 左右灯柱的比例值
+    float max_lr_rate;              // 左右灯柱的最大比例值
+    float min_lr_rate;              // 左右灯柱的最小比例值
     float max_wh_ratio;         // 装甲板的最大长宽比
     float min_wh_ratio;         // 最小长宽比
     float small_armor_wh_threshold;// 大小装甲的界限阈值
@@ -52,7 +53,8 @@ struct ArmorParam {
 		max_light_delta_angle = 30;
 		near_face_v = 100;
 		max_lr_rate = 1.99;
-		max_wh_ratio = 5.02;
+        min_lr_rate = 0.5;
+		max_wh_ratio = 4.02;
 		min_wh_ratio = 1.13;
 		small_armor_wh_threshold = 2.96;
 		bin_cls_thres = 166;
@@ -69,7 +71,9 @@ struct matched_rect{
 
 //候选灯条的结构体
 struct candidate_target{
+    cv::Point2i armor_center;
     int armor_height;
+    int armor_area;
     float armor_angle;
     int index;
     bool is_small_armor;
@@ -94,10 +98,10 @@ public:
         _dect_rect = cv::Rect();
         _is_small_armor = false;
         _lost_cnt = 0;
-        _is_lost = true;     
+        _is_lost = true;
     }
 
-    
+
     int sentry_mode;  // 哨兵模式
     int base_mode;    // 吊射基地模式
 
@@ -147,7 +151,7 @@ public:
         return _para.near_face_v;
     }
 
-    
+
 private:
 
     /**
@@ -246,6 +250,7 @@ private:
     int _lost_cnt;                  // 失去目标的次数，n帧没有识别到则全局搜索
     bool _is_small_armor;           // true if armor is the small one, otherwise false
     cv::RotatedRect _res_last;      // last detect result
+    matched_rect _res_last_matched;  // last matched result (include more information)
     cv::Rect _dect_rect;            // detect roi of original image
 
     cv::Mat _src;                   // source image
