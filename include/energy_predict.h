@@ -14,7 +14,6 @@
   观测方程：beita = H*xita + R
   F是对spd的积分
   H = 1
-
 */
 
 //
@@ -27,26 +26,27 @@
 class energy_pre :public energy
 {
 	//一阶卡尔曼
-	double F;//状态转移矩阵
-	double H;//观测矩阵
+	Eigen::Matrix<double,2,2> F;//状态转移矩阵
+	Eigen::Matrix<double,1,2> H;//观测矩阵
 	
-	double Q;//预测误差
+	Eigen::Matrix<double,2,2> Q;//预测误差
 	
-	double R;//观测误差
-	double angle_k_1 = 0.1;
+	Eigen::Matrix<double,1,1> R;//观测误差
+
+	Eigen::Matrix<double,2,2> sigma;//协防差矩阵
 	
-	double sigma;//协防差矩阵
-	
-	double K;//卡尔曼增益
+	Eigen::Matrix<double,2,1> K;//卡尔曼增益
 	double measure_angle = 0;
-	
-	
-	bool flip_angle;
-	double angle_k;
+
+	Eigen::Matrix<double,2,1> angle_k_1 = {0.1, 0};
+	Eigen::Matrix<double,2,1> angle_k = {0.1, 0};
+
+	Eigen::Matrix<double,2,2> identity = Eigen::Matrix<double,2,2>::Identity();
 
 	Eigen::Matrix3d F_EGN;
 	Eigen::Matrix<double,1,5> C_EGN;
 
+	bool flip_angle;
 public:
     cv::Point Aim_armor;
     cv::RotatedRect center_R;
@@ -62,15 +62,13 @@ public:
 
     int direct = -1;
     int dir_count = 0;
-
-    double w_std=0.106,h_std=0.106;
 	
 	double shoot_delay = 2.65911;
 	
 	cv::Point start_p = {-1,-1};
 	cv::Point start_c = {-1,-1};
 	
-	double start_angle = 0;
+//	double start_angle = 0;
 	
 	energy_inf target;
 
@@ -85,8 +83,9 @@ public:
 	cv::Point angle2_xy(cv::Point &now_xy, double pre_angle);//角度转xy坐标
 	double measured(cv::Point& xy);//观测函数,就是观测当前距离开始转过的角度
 	
-	double predict(double n_time, double dt, bool pre_not, bool samll_energy);//预测步
-	double correct(double measure);//更新步
+	Eigen::Matrix<double,2,1> predict(double dt, bool pre_not, bool samll_energy);//预测步
+
+	Eigen::Matrix<double,2,1> correct(Eigen::Matrix<double,1,1> &measure);//更新步
 	
 	cv::Point gravity_finish(cv::Point &pp);
 

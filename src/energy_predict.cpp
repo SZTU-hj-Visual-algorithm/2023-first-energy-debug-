@@ -7,35 +7,34 @@
 //
 void energy_pre::reset()//没打中大符，大符时间重置故所有参数都要重置
 {
-	H = 1;
-	Q = 10;
-	R = 0.6;
+	Q << 10, 0,
+	     0, 8;
+	R << 0.5;
 	sigma = Q;
 	start_p = { -1,-1 };
 	start_c = {-1,-1};
-	measure_angle = 0.10;
-	angle_k_1 = 0.10;
-	angle_k = 0.10;
+	measure_angle = 0.1;
+	angle_k_1 << 0.1, 0.2;
 	//start_time = -1;
 	last_time = 0;
 	depth = 0;
 	t=0;
 	dt=0;
 	flip_angle = false;
+	hited_count=0;
 //	count = 0;
 }
 
 void energy_pre::hit_reset()//打中大符后所需的重置函数
 {
-	H = 1;
-	Q = 10;
-	R = 0.6;
+    Q << 10, 0,
+         0, 8;
+    R << 0.5;
 	sigma = Q;
 	start_c = {-1,-1};
 	start_p = {-1,-1};
-	measure_angle = 0.10;
-	angle_k_1 = 0.10;
-	angle_k = 0.10;
+	measure_angle = 0.1;
+	angle_k_1 << 0.1, 0.2;
 	last_time = 0;
 	flip_angle = false;
 }
@@ -70,9 +69,10 @@ cv::Point energy_pre::angle2_xy(cv::Point &now_xy, double pred_angle)
 
 energy_pre::energy_pre()
 {
-	H = 1;
-	Q = 10;
-	R = 0.6;
+	H << 1,0;
+	Q << 10, 0,
+	     0, 8;
+	R << 0.5;
 	sigma = Q;
 	F_MAT=(cv::Mat_<double>(3, 3) << 1572.95566, 0.000000000000, 631.34618, 0.000000000000, 1572.71538, 523.05524, 0.000000000000, 0.000000000000, 1.000000000000);
 	C_MAT=(cv::Mat_<double>(1, 5) << -0.08780, 0.21354, -0.00000, 0.00006, 0.00000);
@@ -85,96 +85,35 @@ energy_pre::energy_pre()
 
 
 
-double energy_pre::predict(double t, double dt, bool pre_not, bool samll_energy)
+Eigen::Matrix<double,2,1> energy_pre::predict(double get_dt, bool pre_not, bool samll_energy)
 {
-	if (samll_energy)
-	{
-//		printf("small energy!!!\n");
-		if (pre_not)
-		{
-			F = 1 + dt/t;
-			angle_k = F*angle_k;
-			angle_k_1 = angle_k-start_angle;
-			return angle_k_1;
-		}
-		else
-		{
-			t = (t+t+dt)/2;
-			F = 1 + dt/t;
-			return F*angle_k - start_angle;
-		}
-		
-	}
-	else
-	{
-//		printf("big energy!!!\n");
-		if (pre_not)
-		{
-			double F1 = 1.977 * sin(2.000 * t) + 1.345;
-			double F2 = 1.177 * t - 913.0000 * cos(0.971 * t) * cos(0.971 * t) / 971.000 + 913.000 / 971.000;
-			//if (sin(1.942*t))
-			F = 1 + F1 * dt / F2;
-			/*if (sin(1.942*t) > 0.5)
-			{
-				shoot_delay = 0.69511;
-			}
-			else
-			{
-				shoot_delay = 0.35911;
-			}*/
-			angle_k = F*angle_k;
-			angle_k_1 = angle_k - start_angle;
-//		angle_k_1 = F*angle_k_1;
-			return angle_k_1;
-		}
-		else
-		{
-			t = t + dt;
-			double F1 = 1.977 * sin(2.000 * t) + 1.345;
-			double F2 = 1.177 * t - ((913.00000 * cos(0.971 * t) * cos(0.971 * t)) / 971.0000)+ (913.00000 / 971.00000);
-			//std::cout << "时间" << t << std::endl;
-			//std::cout << "F2" << F2 << std::endl;
-			F = 1 + F1 * dt / F2;
-			//std::cout << "F" << F << std::endl;
-			//让预测不影响卡尔曼的迭代
-			return F * angle_k - start_angle;
-		}
-	}
-	
+    if (pre_not)
+    {
+        F << 1,dt,
+             0,1;
+        angle_k_1 = F*angle_k_1;
+        return angle_k_1;
+    }
+    else
+    {
+        F << 1,get_dt,
+             0,1;
+        return F*angle_k_1;
+    }
 }
 
-double energy_pre::correct(double measure)//这里先不管了，以后再想，摆了
+Eigen::Matrix<double,2,1> energy_pre::correct(Eigen::Matrix<double,1,1> &measure)
 {
-	sigma = F * sigma * F + Q;
+	sigma = F * sigma * F.transpose() + Q;
 	
-	K = sigma * H / (H * sigma * H + R);
+	K = sigma * H.transpose() * (H * sigma * H.transpose() + R).inverse();
 	
 	angle_k_1 = angle_k_1 + K * (measure - H * angle_k_1);
 	
-	sigma = (1 - K * H) * sigma;
-	
-	//得出绝对角度的后验值
-	angle_k = angle_k_1 + start_angle;
+	sigma = (identity - K * H) * sigma;
 	
 	return angle_k_1;
 }
-
-
-
-//double energy_pre::keep_pi_2(double angle)
-//{
-//	if (angle > 90)
-//	{
-//		angle = 90.0 - (angle - 90.0);
-//		return angle;
-//	}
-//	else if (angle < 0)
-//	{
-//		angle = -angle;
-//		return angle;
-//	}
-//	return angle;
-//}
 
 double energy_pre::keep_pi(double angle)
 {

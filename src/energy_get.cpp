@@ -94,30 +94,35 @@ bool energy_pre::energy_predict_aim(long int now_time, bool small_energy) {
 	}
 //	cout << "direct：" << direct << endl;
 //	cout<<"dir_count:"<<dir_count<<endl;
-	double angle;
+	Eigen::Matrix<double,1,1> angle;
 
 	//上一时刻的点设置好
     if ((center_R.center.x!=0)&&(center_R.center.y!=0)&&(depth>3)&&(depth<13))
     {
         if (direct!=-1)
         {
-            angle = measured(Aim_armor);
+            angle << measured(Aim_armor);
             //			cout<<"观测值："<<angle<<endl;
 
             double predict_angle;
-            predict(t, dt, true, small_energy);//更新步前必要的更新参数用
-            double cor = correct(angle);//更新步
+            predict(dt, true, small_energy);//更新步前必要的更新参数用
+            double cor = correct(angle)[0];//更新步
             //std::cout<<"更新角度："<<cor<<std::endl;
+
             cv::Point pre_aim;
             double p_t =sqrt(real_xy[0]*real_xy[0]+real_xy[1]*real_xy[1]+depth*depth) / SPEED;
-            predict_angle = predict(t , (p_t + shoot_delay)*1.3385, false,small_energy);
+            predict_angle = predict((p_t + shoot_delay)*1.3385, false,small_energy)[0];
             //cout<<predict_angle<<endl;
+
             double pred_ang = predict_angle - cor;
             //std::cout<<"预测角度："<<pred_ang<<std::endl;
+
             pre_aim = angle2_xy(Aim_armor,pred_ang);
             //			std::cout<<"predict_aim:"<<pre_aim<<std::endl;
+
             cv::Point mubiao = gravity_finish(pre_aim);
             //cout<<mubiao.x<<"\t"<<mubiao.y<<endl;
+
             circle(src, mubiao, 8, Scalar(255, 255, 0), -1);
             //imshow("image", src);
             return true;
